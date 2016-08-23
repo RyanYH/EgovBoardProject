@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="bbs">
+	<typeAlias alias="BbsVO" type="egovframework.com.bbs.service.bbsVO"/>
+	<typeAlias alias="searchVO" type="egovframework.com.bbs.service.bbsDefaultVO"/>
+	<resultMap id="bbsVo" class="egovframework.com.bbs.service.bbsVO">
+		<result property="no" column="NO" columnIndex="1"/>
+		<result property="name" column="NAME" columnIndex="2"/>
+		<result property="subject" column="SUBJECT" columnIndex="3"/>
+        <result property="conts" column="CONTS" columnIndex="4"/>
+        <result property="pwd" column="PWD" columnIndex="5"/>         		
+		<result property="regdate" column="REGDATE" columnIndex="6"/>
+		<result property="hit" column="HIT" columnIndex="7"/>
+		<!-- <result property="group_id" column="GROUP_ID" columnIndex="8"/> -->	
+  	</resultMap>
+	
+	   <!--  
+	      @Select("SELECT no,subject,name,regdate,hit,group_tab,num "
+    	   +"FROM (SELECT no,subject,name,regdate,hit,group_tab,rownum as num "
+    	   +"FROM (SELECT no,subject,name,regdate,hit,group_tab "
+    	   +"FROM board ORDER BY group_id DESC,group_step ASC )) "
+    	   +"WHERE num BETWEEN #{start} AND #{end}")
+          public List<BoardVO> boardListData(Map map); 
+       -->
+    
+	<select id="bbsDAO.boardListData" parameterClass="Map" resultMap="bbsVo">
+        <![CDATA[    
+               SELECT no,subject,name,regdate,hit,conts,pwd,num 
+               FROM (SELECT no,subject,name,regdate,hit,conts,pwd,rownum as num 
+               FROM (SELECT no,subject,name,regdate,hit,conts,pwd
+               FROM board) ORDER BY no DESC)
+               WHERE num between #start# AND #end#
+               ORDER BY no DESC            
+        ]]>
+    </select> 
+    
+   <!--  
+     @Select("SELECT CEIL(COUNT(*)/10) FROM board")
+       public int boardTotalPage(); 
+    -->
+<!--     <select id="bbsDAO.boardTotalPage" parameterClass="bbsVO" resultClass="Integer">
+    	<![CDATA[    	
+    		SELET CEIL(COUNT(*)/10) FROM BOARD
+    	]]>   
+    </select> -->
+<!--        @Update("UPDATE board SET "
+    	   +"hit=hit+1 "
+    	   +"WHERE no=#{no}")
+    public void boardHitIncrement(int no);
+    
+    @Select("SELECT no,name,subject,content,regdate,hit "
+    	   +"FROM board "
+    	   +"WHERE no=#{no}") -->
+    	   
+    <select id="bbsDAO.boardContentData" resultMap="bbsVo" >
+    	<![CDATA[
+    		SELECT  NO, NAME, SUBJECT,CONTS, REGDATE, HIT, PWD
+    		FROM BOARD 
+    		WHERE NO = #no#
+    	]]>
+    </select>     
+       <!--  @Insert("INSERT INTO board VALUES("
+    	+"#{no},#{name},#{subject},#{content},"
+    	+"#{pwd},SYSDATE,0,"
+    	+"(SELECT NVL(Max(group_id)+1,1) FROM board),"
+    	+"0,0,0,0)") -->
+    	
+    <insert id="bbsDAO.boardInsert" parameterClass="bbsVO">
+    	<![CDATA[
+    		INSERT INTO BOARD(no,name,subject,conts,pwd) VALUES ((SELECT NVL(MAX(no)+1,1) as no FROM board),
+    		#name#,#subject#,#conts#,#pwd#)
+    	]]>
+    </insert> 
+    
+    <select id="bbsDAO.boardSearchData" remapResults="true" parameterClass="string" resultMap="bbsVo">
+    	<![CDATA[
+			SELECT  NO,NAME,SUBJECT,HIT,REGDATE,CONTS,PWD
+            FROM  board
+            WHERE SUBJECT LIKE '%'||#searchKeyword#||'%'
+            ORDER BY NO DESC
+    	]]>
+    </select>
+    
+<!--          		 
+			   SELECT no,subject,name,regdate,hit,conts,pwd,num 
+               FROM (SELECT no,subject,name,regdate,hit,conts,pwd,rownum as num 
+               FROM (SELECT no,subject,name,regdate,hit,conts,pwd
+               FROM board) ORDER BY no DESC)
+               WHERE num between #start# AND #end#
+               AND SUBJECT LIKE '%'||#searchKeyword#||'%'
+               ORDER BY no DESC  
+-->
+<!--      	  @Update("UPDATE board SET "
+				  +"name=#{name},subject=#{subject},"
+				  +"content=#{content} "
+				  +"WHERE no=#{no} ") 
+-->
+    <update id="bbsDAO.boardContentUpdate" parameterClass="bbsVO">
+    	<![CDATA[
+    		UPDATE board 
+    		SET name=#name#,subject=#subject#, conts=#conts#, pwd=#pwd#
+    		WHERE no=#no#
+    	]]>
+    </update>
+    
+    <delete id="bbsDAO.baordDeleteData" parameterClass="Integer">
+    	<![CDATA[
+    		DELETE FROM board
+    		WHERE no=#no#
+    	]]>
+    </delete>
+    
+        <update id="bbsDAO.boardIncrment" parameterClass="bbsVO">
+    	<![CDATA[
+    		UPDATE board 
+    		SET hit=hit+1
+    	    WHERE no=#no#
+    	]]>
+        </update>  
+    	<select id="bbsDAO.selectbbsListTotCnt" parameterClass="searchVO" resultClass="integer">
+        <![CDATA[
+			SELECT COUNT(*) totcnt	
+			FROM BOARD
+		]]>
+	    </select>
+	    <select id="bbsDAO.selectbbsTotCnt" parameterClass="searchVO" resultClass="integer">
+        <![CDATA[
+			SELECT MAX(no) totcnt	
+			FROM BOARD
+		]]>
+	    </select>
+</sqlMap>
